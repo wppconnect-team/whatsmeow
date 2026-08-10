@@ -136,12 +136,13 @@ func (fs *FrameSocket) SendFrame(data []byte) error {
 	if headerLength > FrameMaxSize-FrameLengthSize-dataLength {
 		return fmt.Errorf("%w (header %d bytes + payload %d bytes exceeds max %d bytes)", ErrFrameTooLarge, headerLength, dataLength, FrameMaxSize)
 	}
-	// Whole frame is header + 3 bytes for length + data
-	wholeFrame := make([]byte, headerLength+FrameLengthSize+dataLength)
+	// Build incrementally so the allocation does not depend on an unchecked
+	// sum of attacker-influenced lengths. The bounds above cap the final frame.
+	wholeFrame := append([]byte(nil), fs.Header...)
+	wholeFrame = append(wholeFrame, 0, 0, 0)
 
 	// Copy the header if it's there
 	if fs.Header != nil {
-		copy(wholeFrame[:headerLength], fs.Header)
 		// We only want to send the header once
 		fs.Header = nil
 	}
