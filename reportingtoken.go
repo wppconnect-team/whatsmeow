@@ -97,6 +97,12 @@ func extractReportingTokenContent(data []byte, config []reportingField) []byte {
 		Bytes []byte
 	}
 	var fields []field
+	safeEnd := func(start int, length uint64) (int, bool) {
+		if start < 0 || start > len(data) || length > uint64(len(data)-start) {
+			return 0, false
+		}
+		return start + int(length), true
+	}
 	i := 0
 	for i < len(data) {
 		// Read tag (varint)
@@ -114,14 +120,32 @@ func extractReportingTokenContent(data []byte, config []reportingField) []byte {
 			switch wireType {
 			case wireVarint:
 				_, n := binary.Uvarint(data[i:])
+				if n <= 0 {
+					return nil
+				}
 				i += n
 			case wire64bit:
-				i += 8
+				var ok bool
+				if i, ok = safeEnd(i, 8); !ok {
+					return nil
+				}
 			case wireBytes:
 				l, n := binary.Uvarint(data[i:])
-				i += n + int(l)
+				if n <= 0 {
+					return nil
+				}
+				valStart, ok := safeEnd(i, uint64(n))
+				if !ok {
+					return nil
+				}
+				if i, ok = safeEnd(valStart, l); !ok {
+					return nil
+				}
 			case wire32bit:
-				i += 4
+				var ok bool
+				if i, ok = safeEnd(i, 4); !ok {
+					return nil
+				}
 			default:
 				return nil
 			}
@@ -130,21 +154,39 @@ func extractReportingTokenContent(data []byte, config []reportingField) []byte {
 		switch wireType {
 		case wireVarint:
 			_, n := binary.Uvarint(data[i:])
+			if n <= 0 {
+				return nil
+			}
 			i += n
+			if i > len(data) {
+				return nil
+			}
 			fields = append(fields, field{Num: fieldNum, Bytes: data[fieldStart:i]})
 		case wire64bit:
-			i += 8
+			var ok bool
+			if i, ok = safeEnd(i, 8); !ok {
+				return nil
+			}
 			fields = append(fields, field{Num: fieldNum, Bytes: data[fieldStart:i]})
 		case wireBytes:
 			l, n := binary.Uvarint(data[i:])
-			valStart := i + n
-			valEnd := valStart + int(l)
+			if n <= 0 {
+				return nil
+			}
+			valStart, ok := safeEnd(i, uint64(n))
+			if !ok {
+				return nil
+			}
+			valEnd, ok := safeEnd(valStart, l)
+			if !ok {
+				return nil
+			}
 			if fieldCfg.IsMessage || len(fieldCfg.Subfields) > 0 {
 				// Recursively extract subfields
 				sub := extractReportingTokenContent(data[valStart:valEnd], fieldCfg.Subfields)
 				if len(sub) > 0 {
 					// Re-encode tag and length
-					buf := make([]byte, 0, tagLen+n+len(sub))
+					var buf []byte
 					tagBuf := make([]byte, binary.MaxVarintLen64)
 					tagN := binary.PutUvarint(tagBuf, tag)
 					lenBuf := make([]byte, binary.MaxVarintLen64)
@@ -159,7 +201,10 @@ func extractReportingTokenContent(data []byte, config []reportingField) []byte {
 			}
 			i = valEnd
 		case wire32bit:
-			i += 4
+			var ok bool
+			if i, ok = safeEnd(i, 4); !ok {
+				return nil
+			}
 			fields = append(fields, field{Num: fieldNum, Bytes: data[fieldStart:i]})
 		default:
 			return nil

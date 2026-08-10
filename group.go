@@ -780,7 +780,7 @@ func (cli *Client) parseGroupNode(groupNode *waBinary.Node) (*types.GroupInfo, e
 			group.IsLocked = true
 		case "ephemeral":
 			group.IsEphemeral = true
-			group.DisappearingTimer = uint32(childAG.Uint64("expiration"))
+			group.DisappearingTimer = childAG.Uint32("expiration")
 		case "member_add_mode":
 			modeBytes, _ := child.Content.([]byte)
 			group.MemberAddMode = types.GroupMemberAddMode(modeBytes)
@@ -960,7 +960,7 @@ func (cli *Client) parseGroupChange(node *waBinary.Node) (*events.GroupInfo, []s
 			link := InviteLinkPrefix + cag.String("code")
 			evt.NewInviteLink = &link
 		case "ephemeral":
-			timer := uint32(cag.Uint64("expiration"))
+			timer := cag.Uint32("expiration")
 			evt.Ephemeral = &types.GroupEphemeral{
 				IsEphemeral:       true,
 				DisappearingTimer: timer,
