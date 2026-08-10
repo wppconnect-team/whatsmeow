@@ -133,6 +133,9 @@ func (fs *FrameSocket) SendFrame(data []byte) error {
 	}
 
 	headerLength := len(fs.Header)
+	if headerLength > FrameMaxSize-FrameLengthSize-dataLength {
+		return fmt.Errorf("%w (header %d bytes + payload %d bytes exceeds max %d bytes)", ErrFrameTooLarge, headerLength, dataLength, FrameMaxSize)
+	}
 	// Whole frame is header + 3 bytes for length + data
 	wholeFrame := make([]byte, headerLength+FrameLengthSize+dataLength)
 

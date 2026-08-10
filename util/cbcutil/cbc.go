@@ -110,6 +110,14 @@ Encrypt is a function that encrypts plaintext with a given key and an optional i
 func Encrypt(key, iv, plaintext []byte) ([]byte, error) {
 	sizeOfLastBlock := len(plaintext) % aes.BlockSize
 	paddingLen := aes.BlockSize - sizeOfLastBlock
+	maxInt := int(^uint(0) >> 1)
+	allocationExtra := paddingLen + 10
+	if iv == nil {
+		allocationExtra = paddingLen + aes.BlockSize
+	}
+	if len(plaintext) > maxInt-allocationExtra {
+		return nil, fmt.Errorf("plaintext is too large to encrypt: %d bytes", len(plaintext))
+	}
 	plaintextStart := plaintext[:len(plaintext)-sizeOfLastBlock]
 	lastBlock := append(plaintext[len(plaintext)-sizeOfLastBlock:], bytes.Repeat([]byte{byte(paddingLen)}, paddingLen)...)
 

@@ -102,6 +102,39 @@ func (au *AttrUtility) GetUint64(key string, require bool) (uint64, bool) {
 	}
 }
 
+func (au *AttrUtility) GetUint32(key string, require bool) (uint32, bool) {
+	if strVal, ok := au.GetString(key, require); !ok {
+		return 0, false
+	} else if intVal, err := strconv.ParseUint(strVal, 10, 32); err != nil {
+		au.Errors = append(au.Errors, fmt.Errorf("failed to parse uint32 in attribute '%s': %w", key, err))
+		return 0, false
+	} else {
+		return uint32(intVal), true
+	}
+}
+
+func (au *AttrUtility) GetUint16(key string, require bool) (uint16, bool) {
+	if strVal, ok := au.GetString(key, require); !ok {
+		return 0, false
+	} else if intVal, err := strconv.ParseUint(strVal, 10, 16); err != nil {
+		au.Errors = append(au.Errors, fmt.Errorf("failed to parse uint16 in attribute '%s': %w", key, err))
+		return 0, false
+	} else {
+		return uint16(intVal), true
+	}
+}
+
+func (au *AttrUtility) GetInt(key string, require bool) (int, bool) {
+	if strVal, ok := au.GetString(key, require); !ok {
+		return 0, false
+	} else if intVal, err := strconv.Atoi(strVal); err != nil {
+		au.Errors = append(au.Errors, fmt.Errorf("failed to parse int in attribute '%s': %w", key, err))
+		return 0, false
+	} else {
+		return intVal, true
+	}
+}
+
 func (au *AttrUtility) GetBool(key string, require bool) (bool, bool) {
 	if strVal, ok := au.GetString(key, require); !ok {
 		return false, false
@@ -147,13 +180,13 @@ func (au *AttrUtility) String(key string) string {
 }
 
 func (au *AttrUtility) OptionalInt(key string) int {
-	val, _ := au.GetInt64(key, false)
-	return int(val)
+	val, _ := au.GetInt(key, false)
+	return val
 }
 
 func (au *AttrUtility) Int(key string) int {
-	val, _ := au.GetInt64(key, true)
-	return int(val)
+	val, _ := au.GetInt(key, true)
+	return val
 }
 
 func (au *AttrUtility) Int64(key string) int64 {
@@ -163,6 +196,11 @@ func (au *AttrUtility) Int64(key string) int64 {
 
 func (au *AttrUtility) Uint64(key string) uint64 {
 	val, _ := au.GetUint64(key, true)
+	return val
+}
+
+func (au *AttrUtility) Uint32(key string) uint32 {
+	val, _ := au.GetUint32(key, true)
 	return val
 }
 

@@ -782,12 +782,12 @@ func parseDeviceList(user types.JID, deviceNode waBinary.Node) []types.JID {
 	children := deviceList.GetChildren()
 	devices := make([]types.JID, 0, len(children))
 	for _, device := range children {
-		deviceID, ok := device.AttrGetter().GetInt64("id", true)
+		deviceID, ok := device.AttrGetter().GetUint16("id", true)
 		isHosted := device.AttrGetter().Bool("is_hosted")
 		if device.Tag != "device" || !ok {
 			continue
 		}
-		user.Device = uint16(deviceID)
+		user.Device = deviceID
 		if isHosted {
 			hostedUser := user
 			if user.Server == types.HiddenUserServer {
@@ -807,11 +807,11 @@ func parseFBDeviceList(user types.JID, deviceList waBinary.Node) deviceCache {
 	children := deviceList.GetChildren()
 	devices := make([]types.JID, 0, len(children))
 	for _, device := range children {
-		deviceID, ok := device.AttrGetter().GetInt64("id", true)
+		deviceID, ok := device.AttrGetter().GetUint16("id", true)
 		if device.Tag != "device" || !ok {
 			continue
 		}
-		user.Device = uint16(deviceID)
+		user.Device = deviceID
 		devices = append(devices, user)
 		// TODO take identities here too?
 	}
