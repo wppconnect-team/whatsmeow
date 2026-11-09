@@ -152,7 +152,7 @@ func (fs *FrameSocket) SendFrame(data []byte) error {
 	wholeFrame[headerLength+2] = byte(dataLength)
 
 	// Copy actual frame data
-	copy(wholeFrame[headerLength+FrameLengthSize:], data)
+	wholeFrame = append(wholeFrame, data...)
 
 	return conn.Write(fs.cancelCtx, websocket.MessageBinary, wholeFrame)
 }
